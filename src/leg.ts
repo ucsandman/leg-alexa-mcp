@@ -45,6 +45,10 @@ function quoteForCmd(a: string): string {
   return /[\s"]/.test(a) ? `"${a.replace(/"/g, '""')}"` : a;
 }
 
+// Arguments we ever pass to `leg`: subcommands, flags, session ids. Anything
+// outside this set is rejected rather than embedded in a cmd.exe command line.
+const SAFE_ARG = /^[A-Za-z0-9_.\-/:]+$/;
+
 /**
  * Build the actual { cmd, args } to exec. `platform` and `envBin` are
  * injectable so the Windows shim logic is unit-testable on any OS.
@@ -53,7 +57,7 @@ export function legInvocation(
   subArgs: string[],
   platform: NodeJS.Platform = process.platform,
   envBin: string | undefined = process.env.LEG_BIN,
-): { cmd: string; args: string[] } {
+): { cmd: string; args: string[]; windowsVerbatimArguments?: boolean } {
   const raw = (envBin ?? "").trim() || "leg";
   let bin = raw;
   if (platform === "win32" && !/[\\/]/.test(raw)) {
@@ -67,19 +71,30 @@ export function legInvocation(
       };
     }
     if (/\.(cmd|bat)$/i.test(bin)) {
-      // cmd.exe takes everything after /c as one command line.
+      // cmd.exe gets ONE prebuilt command line. It must reach CreateProcess
+      // verbatim: libuv's default MSVCRT-style quoting (\" escapes) is not
+      // understood by cmd's own parser and breaks the invocation.
+      for (const a of subArgs) {
+        if (!SAFE_ARG.test(a)) {
+          throw new Error(`refusing to pass unsafe argument to cmd.exe: ${JSON.stringify(a)}`);
+        }
+      }
       const line = [`"${bin}"`, ...subArgs.map(quoteForCmd)].join(" ");
-      return { cmd: "cmd.exe", args: ["/d", "/c", line] };
+      return { cmd: "cmd.exe", args: ["/d", "/c", line], windowsVerbatimArguments: true };
     }
   }
   return { cmd: bin, args: subArgs };
 }
 
 function runLeg(args: string[]): Promise<string> {
-  const { cmd, args: argv } = legInvocation(args);
+  const { cmd, args: argv, windowsVerbatimArguments } = legInvocation(args);
   return new Promise((resolve, reject) => {
-    execFile(cmd, argv, { timeout: TIMEOUT_MS, env: process.env }, (err, stdout, stderr) => {
-      if (err) {
+    execFile(
+      cmd,
+      argv,
+      { timeout: TIMEOUT_MS, env: process.env, windowsVerbatimArguments: windowsVerbatimArguments ?? false },
+      (err, stdout, stderr) => {
+        if (err) {
         const hint =
           (err as NodeJS.ErrnoException).code === "ENOENT"
             ? `${cmd} not found. Install LegCli (npm i -g @ucsandman/legcli) or set LEG_BIN.`
