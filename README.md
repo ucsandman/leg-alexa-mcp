@@ -24,7 +24,7 @@ npm run build
 npm start   # listens on http://127.0.0.1:3000/mcp
 ```
 
-Requires `leg` on PATH (`npm i -g @ucsandman/legcli`) with an activated license. Override with `LEG_BIN`, `PORT`, `HOST` (see `.env.example`).
+Requires `leg` on PATH (`npm i -g @ucsandman/legcli`) with an activated license. Override with `LEG_BIN`, `PORT`, `HOST` (see `.env.example`). On Windows the server resolves the npm shim (`leg.cmd` / `leg.ps1`) automatically, no PATH surgery needed.
 
 Smoke test (with MCP_AUTH_TOKEN set):
 
