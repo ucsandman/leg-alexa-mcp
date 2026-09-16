@@ -26,20 +26,23 @@ npm start   # listens on http://127.0.0.1:3000/mcp
 
 Requires `leg` on PATH (`npm i -g @ucsandman/legcli`) with an activated license. Override with `LEG_BIN`, `PORT`, `HOST` (see `.env.example`).
 
-Smoke test:
+Smoke test (with MCP_AUTH_TOKEN set):
 
 ```bash
 curl -X POST http://127.0.0.1:3000/mcp \
   -H 'Content-Type: application/json' \
   -H 'Accept: application/json, text/event-stream' \
+  -H "Authorization: Bearer $MCP_AUTH_TOKEN" \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"smoke","version":"0.1.0"}}}'
 ```
+
+`GET /health` returns `{"ok":true}` with no auth, for load-balancer checks.
 
 ## Wiring to Alexa+
 
 Register `http(s)://<your-host>/mcp` as a self-hosted MCP server in the Alexa+ developer tooling (see the hackathon's Alexa+ track resources). The server is stateless: no session ids, every POST is a complete JSON-RPC request.
 
-Security note: this scaffold binds loopback and has no auth. Before exposing it past localhost, put it behind a token check (the same bearer-token shape Leg itself uses with `LEG_TOKEN`) or a tunnel you control. `handoff_session` ends a running agent process; treat it as the one dangerous tool.
+Security: this server binds loopback by default. Before exposing it past localhost, set `MCP_AUTH_TOKEN` to a long random string; every POST to /mcp then needs `Authorization: Bearer <token>` (constant-time compare), and binding a non-loopback HOST without a token is refused at startup. `handoff_session` is the one dangerous tool: it ends a running agent process and runs in two enforced steps. The first call returns a preview plus a single-use token that expires in 5 minutes; only a second call with that token executes. The server, not convention, enforces the pause.
 
 ## Assumptions (to verify against the track docs)
 
