@@ -55,7 +55,7 @@ Security: this server binds loopback by default. Before exposing it past localho
 - [ ] Demo video under 3 minutes, public, English, no third-party trademarks/music
 - [ ] Product feedback on every tool/SDK used (MCP SDK, Alexa+ tooling)
 - [ ] Friction log entries (see `FRICTION-LOG.md`, up to 10% judging bonus)
-- [ ] Track: Alexa+. Mini challenges: AWS Builder (host on Bedrock AgentCore or build the agent with Strands), Open Source (this repo)
+- [ ] Track: Alexa+. Mini challenge: Open Source (this repo)
 - [ ] If building on existing work, document what changed during the submission window
 
 ## License
