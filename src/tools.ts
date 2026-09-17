@@ -2,6 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { listSessions, showSession, sessionEvents, handoffSession } from "./leg.js";
 import { issueHandoffToken, consumeHandoffToken } from "./confirm.js";
+import { catchUp } from "./catchup.js";
+import { WIDGET_URI } from "./widget.js";
 
 const SessionId = z.string().min(1).describe("Leg session id, as returned by list_sessions");
 
@@ -9,11 +11,25 @@ type TextResult = { content: [{ type: "text"; text: string }] };
 const text = (t: string): TextResult => ({ content: [{ type: "text" as const, text: t }] });
 
 export function registerTools(server: McpServer): void {
-  server.tool(
+  // list_sessions is registered with registerTool (not server.tool) so the
+  // tool definition can carry _meta.ui.resourceUri: that is what tells MCP
+  // Apps hosts (including Amazon's Alexa+ Add-on Local Inspector) which
+  // ui:// resource to render for the widget path.
+  server.registerTool(
     "list_sessions",
-    "List every Leg agent session: id, agent, repo, branch, task, status, and 5h/7d usage. Start here.",
-    {},
+    {
+      description:
+        "List every Leg agent session: id, agent, repo, branch, task, status, and 5h/7d usage. Start here.",
+      _meta: { ui: { resourceUri: WIDGET_URI, visibility: ["model", "app"] } },
+    },
     async () => text(JSON.stringify(await listSessions(), null, 2)),
+  );
+
+  server.tool(
+    "catch_up",
+    "What happened while you were away: one spoken-style summary across every Leg session. What changed, what needs attention, what is stuck. Ask this first when you have been away from the desk.",
+    {},
+    async () => text(await catchUp()),
   );
 
   server.tool(

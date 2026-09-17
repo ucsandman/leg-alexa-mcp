@@ -10,6 +10,7 @@ Built for the **Amazon Developer Hackathon 2026** (Alexa+ track): self-hosted MC
 | Tool | What it does |
 |---|---|
 | `list_sessions` | Every Leg session: id, agent, repo, branch, task, status, 5h/7d usage |
+| `catch_up` | "What happened while I was away": one spoken-style summary across all sessions, flags what needs attention |
 | `show_session` | Full detail for one session |
 | `session_events` | Timeline: warnings, handoffs, landings, errors |
 | `handoff_session` | Hand off now: stops the agent, starts the next one from the bundle. Confirm with the human first. |
@@ -37,6 +38,10 @@ curl -X POST http://127.0.0.1:3000/mcp \
 ```
 
 `GET /health` returns `{"ok":true}` with no auth, for load-balancer checks.
+
+## Session dashboard widget (MCP Apps)
+
+`list_sessions` links to a `ui://leg-alexa-mcp/sessions` resource (`_meta.ui.resourceUri`) that renders the current sessions as a card dashboard: status badges, usage, latest event, and a "needs attention" flag. Hosts with MCP Apps support (SEP-1865) render it in a sandboxed iframe; Amazon's Alexa+ Add-on Local Inspector uses it for its visual analysis mode, screenshotting the widget in device frames. Hosts without UI support ignore it, and every tool still returns plain text, so nothing depends on the widget.
 
 ## Wiring to Alexa+
 

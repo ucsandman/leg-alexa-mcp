@@ -17,6 +17,7 @@ import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { registerTools } from "./tools.js";
+import { registerWidget } from "./widget.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const HOST = process.env.HOST ?? "127.0.0.1";
@@ -98,6 +99,7 @@ const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse
 
   const server = new McpServer({ name: "leg-alexa-mcp", version: "0.1.0" });
   registerTools(server);
+  registerWidget(server);
   try {
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     await server.connect(transport);
